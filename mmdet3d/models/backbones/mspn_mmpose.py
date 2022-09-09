@@ -668,7 +668,6 @@ class MSPN2(nn.Module):
 
     def init_weights(self, pretrained=None):
         pretrained = self.pretrained
-        # import ipdb;ipdb.set_trace()
         """Initialize model weights."""
         if pretrained.startswith('weights/'):
             loaded = torch.load(pretrained, map_location='cpu')['state_dict']

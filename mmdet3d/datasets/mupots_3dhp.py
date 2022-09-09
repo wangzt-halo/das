@@ -35,7 +35,7 @@ class MuPots3DHP(CocoDataset):
     JOINTS_DEF = {k: i for i, k in enumerate(original_joints_name)}
     ROOT_IDX = joints_name.index('Pelvis')
 
-    def __init__(self, use_bbox_center, norm_depth=False, abs_dz=False, depth_factor=1, **kwargs):
+    def __init__(self, use_bbox_center=False, norm_depth=False, abs_dz=False, depth_factor=1, **kwargs):
         super().__init__(**kwargs)
 
         self.num_joints = len(self.JOINTS_DEF)
@@ -575,6 +575,8 @@ def eval_mupots_abs(ts, test_annot_base, name2pred, res_dict, eval_mode='all'):
     safe_traversal_order = [15, 16, 2, 1, 17, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     safe_traversal_order = [i - 1 for i in safe_traversal_order]
 
+    # eval sequence ts
+    # print('Seq:', ts + 1)
     sequencewise_per_joint_error = []
     sequencewise_per_joint_error_abs = []
     sequencewise_frames = []
@@ -595,6 +597,7 @@ def eval_mupots_abs(ts, test_annot_base, name2pred, res_dict, eval_mode='all'):
     for i in range(num_frames):
         valid_annotations = 0;
         for k in range(num_person):
+            # print(annots[k][i])
             if annots[k][i]['is_valid'] == 1:
                 valid_annotations += 1
         annotated_people += valid_annotations

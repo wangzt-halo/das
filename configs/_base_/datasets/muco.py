@@ -1,17 +1,18 @@
-dataset_type = 'CMUPanopticDataset'
-data_root = 'data/panoptic/'
 class_names = [
     'person'
 ]
 
-img_scale = (1024, 512)
 num_joints = 21
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-train_pipeline = [
+
+train_pipeline_muco = [
     dict(type='LoadImageFromFile', to_float32=True),
     dict(type='LoadAnnotationsPose3D', with_bbox=True, with_label=True),
-    dict(type='ResizePose', img_scale=img_scale, keep_ratio=True),
+    dict(type='ResizePose',
+         scale_depth=True,
+         abs_dz=abs_dz,
+         img_scale=[(1280, 512), (1280, 768)], multiscale_mode='range', keep_ratio=True),
     dict(type='RandomFlipPose3D', flip_ratio_bev_horizontal=0.5,
          flip_pairs=((2, 5), (3, 6), (4, 7), (8, 11), (9, 12), (10, 13), (17, 18), (19, 20)),
          num_joints=num_joints),
@@ -23,12 +24,15 @@ train_pipeline = [
         hue_delta=14),
     dict(
         type='GlobalRotScaleTransPose',
+        scale_depth=True,
+        abs_dz=abs_dz,
+        # rot_range=[-0.15, 0.15],
         rot_range=[-0.1, 0.1],
-        scale_ratio_range=[0.7, 1.43],
-        translation_std=[0.2, 0.2],
+        scale_ratio_range=[0.9, 1.1],
+        translation_std=[0.15, 0.15],
         num_joints=num_joints,
         img_norm_cfg=img_norm_cfg,
-        use_bbox_center=True,
+        use_bbox_center=use_bbox_center,
     ),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='Pad', size_divisor=32),
@@ -39,26 +43,27 @@ train_pipeline = [
             'img', 'gt_bboxes', 'gt_labels', 'gt_poses_3d',
             'gt_labels_3d', 'centers2d', 'depths'
         ],
-        debug=True,
+        debug=False,
         num_joints=num_joints
     ),
 ]
+
 test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotationsPose3D', with_pose_3d=True, with_label_3d=False),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=img_scale,
+        img_scale=(1280, 768),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlipPose3D', flip_ratio_bev_horizontal=0.0,
                  flip_pairs=((2, 5), (3, 6), (4, 7), (8, 11), (9, 12), (10, 13)),
-                 num_joints=num_joints),
+                 num_joints=17),
             dict(type='Normalize', **img_norm_cfg),
             dict(type='Pad', size_divisor=32),
             dict(type='DefaultFormatBundlePose3D', class_names=['person'], with_label=False),
-            dict(type='Collect3D', keys=['img', 'gt_poses_3d']),
+            dict(type='Collect3D', keys=['img', 'gt_poses_3d', 'depths']),
         ])
 ]
 
@@ -74,7 +79,6 @@ data = dict(
         classes=('person',),
         pipeline=train_pipeline,
         test_mode=False,
-        use_bbox_center=True,
     ),
     val=dict(
         type='MuPots3DHP',
@@ -83,7 +87,6 @@ data = dict(
         img_prefix='',
         classes=class_names,
         pipeline=test_pipeline,
-        use_bbox_center=True,
     ),
     test=dict(
         type='MuPots3DHP',
@@ -92,7 +95,5 @@ data = dict(
         img_prefix='',
         classes=class_names,
         pipeline=test_pipeline,
-        use_bbox_center=True,
     ),
 )
-evaluation = dict(interval=2)

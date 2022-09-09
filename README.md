@@ -39,12 +39,16 @@ pip install -v -e .  # or "python setup.py develop"
 #### CMU Panoptic
 Download CMU Panoptic from [Joo et al.](https://github.com/CMU-Perceptual-Computing-Lab/panoptic-toolbox). \
 Process raw data.
-```angular2html
+```shell
 python mytools/panoptic2coco.py --root /path/to/panoptic
 ```
 
 #### MuCo-3DHP and MuPoTS-3D
-Download MuCo-3DHP and MuPoTS-3D from [Moon et al.](https://github.com/mks0601/3DMPPE_POSENET_RELEASE).
+Download MuCo-3DHP and MuPoTS-3D from [Moon et al.](https://github.com/mks0601/3DMPPE_POSENET_RELEASE). \
+Process raw data.
+```shell
+python mytools/muco2coco.py --root /path/to/muco
+```
 
 #### COCO
 Download COCO from [COCO Dataset](https://cocodataset.org/).
@@ -66,7 +70,7 @@ ${ROOT}
 |   |   |-- 160422_ultimatum1
 |   |   |-- 160906_pizza1
 |   |   |-- annotations
-|   |   |   |-- train_new.json
+|   |   |   |-- train.json
 |   |   |   |-- haggling.json
 |   |   |   |-- mafia.json
 |   |   |   |-- ultimatum.json
@@ -75,6 +79,11 @@ ${ROOT}
 |   |   |-- train2017
 |   |   |-- annotations
 |   |   |   |-- person_keypoints_train2017.json
+|   |-- muco
+|   |   |-- unaugmented_set
+|   |   |-- augmented_set
+|   |   |-- annotations
+|   |   |   |-- train_aug.json
 |   |-- mupots
 |   |   |-- TS1
 |   |   |   |-- img_000000.jpg
@@ -91,11 +100,30 @@ Put the models in ```${ROOT}/weights/```
 
 ## Training and Evaluation
 Train on CMU Panoptic dataset:
-```angular2html
+```shell
 bash tools/dist_train.py configs/das/exp_panoptic.py 4
 ```
 
 Evaluate on CMU Panoptic dataset:
-```angular2html
+```shell
 bash tools/dist_test.py configs/das/exp_panoptic.py work_dirs/exp_panoptic/latest.pth 4 --eval mpjpe
+```
+
+## Acknowledgement
+This project is not possible without multiple great open-sourced code bases. We list some notable examples below.
+* [open-mmlab](https://github.com/open-mmlab) 
+* [VoxelPose](https://github.com/microsoft/voxelpose-pytorch)
+* [PoseNet](https://github.com/mks0601/3DMPPE_POSENET_RELEASE)
+* [Top-Down and Bottom-Up](https://github.com/3dpose/3D-Multi-Person-Pose)
+
+## Bibtex
+If this work is helpful for your research, please consider citing the following BibTeX entry.
+```
+@inproceedings{wang2022distribution,
+  title={Distribution-Aware Single-Stage Models for Multi-Person 3D Pose Estimation},
+  author={Wang, Zitian and Nie, Xuecheng and Qu, Xiaochao and Chen, Yunpeng and Liu, Si},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={13096--13105},
+  year={2022}
+}
 ```

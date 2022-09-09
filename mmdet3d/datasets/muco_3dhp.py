@@ -37,43 +37,13 @@ class MuCo3DHPDataset(CocoDataset):
     ROOT_IDX = muco_joints_name.index('Pelvis')
 
     def __init__(self,
-                 yaml_file,
                  ann_file,
                  pipeline,
                  use_bbox_center=False,
-                 use_meshtransformer_ann=False,
                  norm_depth=False,
                  depth_factor=1,
                  abs_dz=False,
                  **kwargs):
-        self.use_meshtransformer_ann = use_meshtransformer_ann
-        if self.use_meshtransformer_ann:
-            pipeline = [x for x in pipeline if x['type'] != 'LoadImageFromFile']
-        # MeshTransformer
-        if use_meshtransformer_ann:
-            self.cfg = load_from_yaml_file(yaml_file)
-            self.is_composite = self.cfg.get('composite', False)
-            self.root = os.path.dirname(yaml_file)
-            if not self.is_composite:
-                img_file = find_file_path_in_yaml(self.cfg['img'], self.root)
-                label_file = find_file_path_in_yaml(self.cfg.get('label', None), self.root)
-                hw_file = find_file_path_in_yaml(self.cfg.get('hw', None), self.root)
-                linelist_file = find_file_path_in_yaml(self.cfg.get('linelist', None), self.root)
-            else:
-                img_file = self.cfg['img']
-                hw_file = self.cfg['hw']
-                label_file = self.cfg.get('label', None)
-                linelist_file = find_file_path_in_yaml(self.cfg.get('linelist', None), self.root)
-
-            self.img_tsv = self.get_tsv_file(img_file)
-            self.label_tsv = None if label_file is None else self.get_tsv_file(label_file)
-            self.hw_tsv = None if hw_file is None else self.get_tsv_file(hw_file)
-            if self.is_composite:
-                assert os.path.isfile(linelist_file)
-                self.line_list = [i for i in range(self.hw_tsv.num_rows())]
-            else:
-                self.line_list = load_linelist_file(linelist_file)
-            self.imgkey2idx = self.prepare_image_key_to_index()
         self.norm_depth = norm_depth
         self.depth_factor = depth_factor
         self.abs_dz = abs_dz
@@ -95,92 +65,6 @@ class MuCo3DHPDataset(CocoDataset):
             valid_inds = valid_inds[::4]
             self.data_infos = [self.data_infos[i] for i in valid_inds]
 
-    def _filter_imgs(self, min_size=32):
-        if self.use_meshtransformer_ann:
-            """Filter images too small or without ground truths."""
-            valid_inds = []
-            # obtain images that contain annotation
-            ids_with_ann = set(_['image_id'] for _ in self.coco.anns.values())
-            # obtain images that contain annotations of the required categories
-            ids_in_cat = set()
-            for i, class_id in enumerate(self.cat_ids):
-                ids_in_cat |= set(self.coco.cat_img_map[class_id])
-            # merge the image id sets of the two conditions and use the merged set
-            # to filter out images if self.filter_empty_gt=True
-            ids_in_cat &= ids_with_ann
-
-            invalid_names = []
-            invalid_count = 0
-            valid_img_ids = []
-            for i, img_info in enumerate(self.data_infos):
-                img_id = self.img_ids[i]
-                if self.filter_empty_gt and img_id not in ids_in_cat:
-                    continue
-                if img_info['file_name'] not in self.imgkey2idx:
-                    invalid_count += 1
-                    invalid_names.append(img_info['file_name'])
-                    continue
-                if min(img_info['width'], img_info['height']) >= min_size:
-                    valid_inds.append(i)
-                    valid_img_ids.append(img_id)
-            self.img_ids = valid_img_ids
-
-            print('FILTERED IMAGE NUM:', invalid_count)
-            print('TOTAL IMAGE NUM:', len(valid_inds))
-        else:
-            return super(MuCo3DHPDataset, self)._filter_imgs(min_size)
-        return valid_inds
-
-    def get_tsv_file(self, tsv_file):
-        if tsv_file:
-            if self.is_composite:
-                return CompositeTSVFile(tsv_file, self.linelist_file,
-                                        root=self.root)
-            tsv_path = find_file_path_in_yaml(tsv_file, self.root)
-            return TSVFile(tsv_path)
-
-    def get_valid_tsv(self):
-        # sorted by file size
-        if self.hw_tsv:
-            return self.hw_tsv
-        if self.label_tsv:
-            return self.label_tsv
-
-    def prepare_image_key_to_index(self):
-        tsv = self.get_valid_tsv()
-        return {tsv.get_key(i): i for i in range(tsv.num_rows())}
-
-    def get_line_no(self, idx):
-        return idx if self.line_list is None else self.line_list[idx]
-
-    def get_image(self, idx):
-        line_no = self.get_line_no(idx)
-        row = self.img_tsv[line_no]
-        # use -1 to support old format with multiple columns.
-        cv2_im = img_from_base64(row[-1])
-        cv2_im = cv2_im.astype(np.float32, copy=True)
-        return cv2_im
-
-    def get_label(self, idx):
-        line_no = self.get_line_no(idx)
-        row = self.label_tsv[line_no][-1]
-        return json.loads(row)
-
-    def _load_image_from_file(self, results):
-        filename = results['img_info']['filename']
-        img = self.get_image(self.imgkey2idx[filename])
-        shape = (results['img_info']['height'], results['img_info']['width'])
-        if img.shape[:2] != shape:
-            # import ipdb; ipdb.set_trace()
-            img = cv2.resize(img, shape[::-1], interpolation=cv2.INTER_LINEAR)
-        results['filename'] = filename
-        results['ori_filename'] = results['img_info']['filename']
-        results['img'] = img
-        results['img_shape'] = img.shape
-        results['ori_shape'] = img.shape
-        results['img_fields'] = ['img']
-        return results
-
     def prepare_train_img(self, idx):
         """Get training data and annotations after pipeline.
 
@@ -201,8 +85,6 @@ class MuCo3DHPDataset(CocoDataset):
             if self.proposals is not None:
                 results['proposals'] = self.proposals[idx]
             self.pre_pipeline(results)
-            if self.use_meshtransformer_ann:
-                results = self._load_image_from_file(results)
             return self.pipeline(results)
         except Exception as e:
             s = repr(e)
@@ -237,8 +119,6 @@ class MuCo3DHPDataset(CocoDataset):
         if self.proposals is not None:
             results['proposals'] = self.proposals[idx]
         self.pre_pipeline(results)
-        if self.use_meshtransformer_ann:
-            results = self._load_image_from_file(results)
         return self.pipeline(results)
 
     def _parse_ann_info(self, img_info, ann_info):
@@ -249,8 +129,9 @@ class MuCo3DHPDataset(CocoDataset):
             ann_info (list[dict]): Annotation info of an image.
 
         Returns:
-            dict: A dict containing the following keys: bboxes, \
-            labels, gt_poses_3d, gt_labels_3d, centers2d, depths, bboxes_ignore
+            dict: A dict containing the following keys: bboxes, labels, \
+                gt_bboxes_3d, gt_labels_3d, attr_labels, centers2d, \
+                depths, bboxes_ignore, masks, seg_map
         """
         # generate pseudo camera parameters
         f = img_info['f']
@@ -291,9 +172,6 @@ class MuCo3DHPDataset(CocoDataset):
                 # 3D pose
                 pose_img = np.array(ann['keypoints_img'], dtype=np.float)
                 pose_cam = np.array(ann['keypoints_cam'], dtype=np.float)
-                # from mytools.vis_3d import pixel2world, world2pixel
-                # pose_img_ = world2pixel(pose_cam.T, cam['K'], cam['R'], cam['t'])[-1].T
-                # import ipdb; ipdb.set_trace()
                 pose_3d = np.concatenate([pose_img, pose_cam[:, 2:]], axis=1)
                 pose_vis = ann['keypoints_vis']
                 pose_3d = np.array(pose_3d)

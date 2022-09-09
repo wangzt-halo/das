@@ -620,7 +620,6 @@ class HRNetPose(nn.Module):
 
         block = self.blocks_dict[block_type]
         stage1_out_channels = num_channels * get_expansion(block)
-        # import ipdb; ipdb.set_trace()
         self.layer1 = self._make_layer(block, 64, stage1_out_channels,
                                        num_blocks)
 
@@ -863,7 +862,6 @@ class HRNetPose(nn.Module):
                 x_list.append(self.transition3[i](y_list[-1]))
             else:
                 x_list.append(y_list[i])
-        # import ipdb; ipdb.set_trace()
         y_list = self.stage4(x_list)
 
         return y_list

@@ -1053,7 +1053,6 @@ class GlobalRotScaleTransPose(object):
                 new_centers, new_joints[:, 1:].reshape(batch, -1), joints_vis
             ], axis=-1).astype(np.float32)
             valid = (joints_vis.sum(-1) >= 3) & ((gt_bboxes[:, 2:] - gt_bboxes[:, :2]).prod() > 64)
-            # import ipdb;ipdb.set_trace()
         input_dict['gt_poses_3d'] = gt_poses_3d[valid].copy()
         input_dict['gt_bboxes'] = new_gt_bboxes[valid]
         input_dict['centers2d'] = gt_poses_3d[:, :2][valid].copy()
