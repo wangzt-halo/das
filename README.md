@@ -109,6 +109,16 @@ Evaluate on CMU Panoptic dataset:
 bash tools/dist_test.py configs/das/exp_panoptic.py work_dirs/exp_panoptic/latest.pth 4 --eval mpjpe
 ```
 
+Train on MUCO-3DHP dataset:
+```shell
+bash tools/dist_train.py configs/das/exp_mupots.py 4
+```
+
+Evaluate on MuPoTS-3D dataset:
+```shell
+bash tools/dist_test.py configs/das/exp_mupots.py work_dirs/exp_mupots/latest.pth 4 --eval pck
+```
+
 ## Acknowledgement
 This project is not possible without multiple great open-sourced code bases. We list some notable examples below.
 * [open-mmlab](https://github.com/open-mmlab) 
