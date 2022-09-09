@@ -83,7 +83,7 @@ ${ROOT}
 |   |   |-- unaugmented_set
 |   |   |-- augmented_set
 |   |   |-- annotations
-|   |   |   |-- train_aug.json
+|   |   |   |-- train_all_interv1.json
 |   |-- mupots
 |   |   |-- TS1
 |   |   |   |-- img_000000.jpg
