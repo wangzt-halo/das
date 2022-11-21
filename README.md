@@ -98,6 +98,8 @@ ${ROOT}
 Download the pretrained MSPN models from [MMPose](https://mmpose.readthedocs.io/en/latest/papers/backbones.html?highlight=mspn#mspn-arxiv-2019).\
 Put the models in ```${ROOT}/weights/```
 
+We provide the checkpoint on CMU Panoptic dataset. [\[Checkpoint\]](https://drive.google.com/drive/folders/1zQ_eS59lBtyPdq9pOFnk4AgWVUiphLbl?usp=sharing)
+
 ## Training and Evaluation
 Train on CMU Panoptic dataset:
 ```shell
